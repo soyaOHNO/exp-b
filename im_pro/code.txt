@@ -1,0 +1,94 @@
+# [3.1 lsq]
+
+def makeAb(w):
+  N=w.shape[0]
+  A=np.zeros((N*2,8),'d')
+  b=np.zeros(N*2,'d')
+  i=np.arange(N)
+  A[i*2+0,0]=w[i,0]
+  A[i*2+0,1]=w[i,1]
+  A[i*2+0,2]=1
+  A[i*2+0,6]=-w[i,0]*w[i,2]
+  A[i*2+0,7]=-w[i,1]*w[i,2]
+  A[i*2+1,3]=w[i,0]
+  A[i*2+1,4]=w[i,1]
+  A[i*2+1,5]=1
+  A[i*2+1,6]=-w[i,0]*w[i,3]
+  A[i*2+1,7]=-w[i,1]*w[i,3]
+  b[i*2    ]=w[i,2]
+  b[i*2+1  ]=w[i,3]
+  return A,b
+
+
+def calcHomography(w): # （注）homography = 射影変換
+
+  A,b=makeAb(w) # w から A と b を計算する．
+
+  # LeaST-SQuares = 最小2乗法
+  tmp=np.linalg.lstsq(A,b,rcond=None)[0]
+
+  # ※3 tmp の前に 0 個，後ろに 1 個の 1 を追加し，3x3 にする．
+  tmp=np.pad(tmp,(0,1),constant_values=1) 
+  return tmp.reshape(3,3)
+
+
+
+def sumOfSquaredDifference(w, im0, im1):
+  for i in range(w.shape[0]):
+    W=7
+    x,y,u,v=w[i]
+
+    tpl=im0[y-W:y+W+1,
+            x-W:x+W+1]
+    tgt=im1[v-W:v+W+1,
+            u-W:u+W+1]
+    res=np.zeros((7,7))
+    for dv in range(-3,4):
+      for du in range(-3,4):
+        tgt=im1[v+dv-W:v+dv+W+1,
+                u+du-W:u+du+W+1]
+        res[dv+3,du+3]=((tpl-tgt)**2).sum()
+    pos = np.array(np.unravel_index(np.argmin(res), res.shape))
+    print(f"{i}[v,u] = {pos - [3,3]}")
+
+
+
+
+def main():
+  w=np.array([
+909,362,598,366,
+854,738,556,743,
+500,519,178,549,
+377,303,19,303,
+930,422,618,424,
+667,358,366,364,
+906,406,596,409,
+856,500,553,503,
+484,326,154,330,
+565,362,253,370,
+438,353,97,361,
+438,319,97,323,
+]).reshape(-1,4)
+  H=calcHomography(w)
+
+  dw,dh=1024,768          # 出力画像の大きさ
+  im0=eb.getImg('IMG_5565.jpg')  # 入力画像0
+  im1=eb.getImg('IMG_5564.jpg')  # 入力画像1
+
+
+  sumOfSquaredDifference(w,im0,im1)
+
+
+  m0d=np.array([[ 1,0,-100 ],
+                [ 0,1,-100 ],
+                [ 0,0,1 ]],'f')                 # 画像0 と 出力画像 の関係
+
+  m1d=H @ m0d                                 # 画像1 と 出力画像 の関係
+
+  dst0=proj(dw,dh, im0, m0d)      # 射影変換後の入力画像0
+  dst1=proj(dw,dh, im1, m1d)
+  dst=(dst0+dst1)/2               # 画像合成（平均）
+
+  eb.imshow(dst)
+
+----------------------------------------------------------------------------------------------------------------
