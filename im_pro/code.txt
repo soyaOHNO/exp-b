@@ -111,7 +111,7 @@ def afn5(dw,dh, src, a):
         a[1,0]*x+a[1,1]*y+a[1,2], \
         a[2,0]*x+a[2,1]*y+a[2,2]
  u,v=u/w,v/w
- m = (0<=u)&(u+1<src.shape[1])&(0<=v)&(v+1<src.shape[0])
+ m = (0<=u)&(u+2<src.shape[1])&(0<=v)&(v+2<src.shape[0])
  ium=np.floor(u[m]); fum=(u[m]-ium)[...,None]; ium=ium.astype('i')
  ivm=np.floor(v[m]); fvm=(v[m]-ivm)[...,None]; ivm=ivm.astype('i')
  x1,x2,x3,x4=1+fum,fum,1-fum,2-fum

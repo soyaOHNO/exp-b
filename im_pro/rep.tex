@@ -12,7 +12,7 @@
 \usepackage{amsmath}
 \renewcommand{\theFancyVerbLine}{\texttt{\footnotesize{\arabic{FancyVerbLine}:}}}
 
-\title{画像処理実験 第3回}
+\title{画像処理実験 第5回}
 \author{学生番号: 09B23523\\
         大野颯也 (OHNO, Soya)}
 \date{\number\year 年\number\month 月\number\day 日}
@@ -50,389 +50,288 @@
 
 
 %--------------------------------------------------------------------%
-\section{第3回} \label{sec:abstract}
-\subsection{課題3.1}
-\subsubsection{関数,bの作成}
-特徴座標 w が，
-\[
-w =
-\begin{pmatrix}
-x_0 & y_0 & u_0 & v_0 \\
-x_1 & y_1 & u_1 & v_1 \\
-x_2 & y_2 & u_2 & v_2 \\
-x_3 & y_3 & u_3 & v_3 \\
-\end{pmatrix}
-\]
-
-であるので，行列A,bは以下のようになる．
-\[
-w =
-\begin{pmatrix}
-x_0 & y_0 & 1 & 0 & 0 & 0 & -u_0 x_0 & -u_0 y_0 \\
-0 & 0 & 0 & x_0 & y_0 & 1 & -u_0 x_0 & -u_0 y_0 \\
-x_1 & y_1 & 1 & 0 & 0 & 0 & -u_1 x_1 & -u_1 y_1 \\
-0 & 0 & 0 & x_1 & y_1 & 1 & -v_1 x_1 & -v_1 y_1 \\
-x_2 & y_2 & 1 & 0 & 0 & 0 & -u_2 x_2 & -u_2 y_2 \\
-0 & 0 & 0 & x_2 & y_2 & 1 & -v_2 x_2 & -v_2 y_2 \\
-x_3 & y_3 & 1 & 0 & 0 & 0 & -u_3 x_3 & -u_3 y_3 \\
-0 & 0 & 0 & x_3 & y_3 & 1 & -v_3 x_3 & -v_3 y_3 \\
-\end{pmatrix}
-\]
-\[
-b^\top =
-\begin{pmatrix}
-u_0 & v_0  & u_1 & v_1 & u_2 & v_2 & u_3 & v_3\\
-\end{pmatrix}
-\]
-
-そして，以下がコードである．ここでは，後の課題で任意の個数の特徴点に合わせれるように，\verb|N=w.shape[0]| で作成する行列の行数も変更するようにしてある．
+\section{第5回} \label{sec:abstract}
+\subsection{課題5.2}
+\subsubsection{極大点リストから，「特徴点らしさ」の大きいものを MAX 個選び出す}
+大きいものから選び出す必要があるため， ary をソートする．以下がソートに使用した関数である．
 
 \begin{Verbatim}[numbers=left, xleftmargin=10mm, numbersep=6pt,
                     fontsize=\small, baselinestretch=0.8]
-def makeAb(w):
-  N=w.shape[0]
-  A=np.zeros((N*2,8),'d')
-  b=np.zeros(N*2,'d')
-  i=np.arange(N)
-  A[i*2+0,0]=w[i,0]
-  A[i*2+0,1]=w[i,1]
-  A[i*2+0,2]=1
-  A[i*2+0,6]=-w[i,0]*w[i,2]
-  A[i*2+0,7]=-w[i,1]*w[i,2]
-  A[i*2+1,3]=w[i,0]
-  A[i*2+1,4]=w[i,1]
-  A[i*2+1,5]=1
-  A[i*2+1,6]=-w[i,0]*w[i,3]
-  A[i*2+1,7]=-w[i,1]*w[i,3]
-  b[i*2    ]=w[i,2]
-  b[i*2+1  ]=w[i,3]
-  return A,b
+def quicksort_des(ary,low,high):
+  if low>=high:
+    return
+  pivot=ary[(low+high)//2,2]
+  i,j=low,high
+  while i<=j:
+    while ary[i,2]>pivot:
+      i+=1
+    while ary[j,2]<pivot:
+      j-=1
+    if i<=j:
+      ary[i,:],ary[j,:]=ary[j,:].copy(),ary[i,:].copy()
+      i+=1
+      j-=1
+  quicksort_des(ary,low,j)
+  quicksort_des(ary,i,high)
 \end{Verbatim}
 
-実行した結果は以下のようになる．
+Python では値を渡すことができず，代入渡しとなってしまうため，swap関数部分である
 
 \begin{Verbatim}[numbers=left, xleftmargin=10mm, numbersep=6pt,
                     fontsize=\small, baselinestretch=0.8]
-[[256.00 218.00   1.00   0.00   0.00   0.00 -94976.00 -80878.00]
- [  0.00   0.00   0.00 256.00 218.00   1.00 -58880.00 -50140.00]
- [347.00 220.00   1.00   0.00   0.00   0.00 -160661.00 -101860.00]
- [  0.00   0.00   0.00 347.00 220.00   1.00 -79810.00 -50600.00]
- [263.00 367.00   1.00   0.00   0.00   0.00 -100729.00 -140561.00]
- [  0.00   0.00   0.00 263.00 367.00   1.00 -99677.00 -139093.00]
- [413.00 315.00   1.00   0.00   0.00   0.00 -218890.00 -166950.00]
- [  0.00   0.00   0.00 413.00 315.00   1.00 -135051.00 -103005.00]]
-[371.00 230.00 463.00 230.00 383.00 379.00 530.00 327.00]
+      ary[i,:],ary[j,:]=ary[j,:].copy(),ary[i,:].copy()
 \end{Verbatim}
 
-例と値が同じであるので，正しく動いている．
+では .copy() を使用して，値のみを変換するようにしている．
+
+MAX は detectFeaturePoints関数 に引数として渡されているため，
+
+\begin{Verbatim}[numbers=left, xleftmargin=10mm, numbersep=6pt,
+                    fontsize=\small, baselinestretch=0.8]
+  quicksort_des(ary,0,len(x)-1)
+  ary=ary[:MAX]
+\end{Verbatim}
+
+と記述することで大きいものから MAX 個選ぶことができる．
 
 
+\subsection{課題5.3}
+\subsubsection{LocalMax の説明}
+LocalMax 関数は次のようになっている．
 
+\begin{Verbatim}[numbers=left, xleftmargin=10mm, numbersep=6pt,
+                    fontsize=\small, baselinestretch=0.8]
+def LocalMax(src,W=7):
+# (5) 近傍での最大値検出
+  out=np.zeros_like(src)
+  for v in range(-W,W+1):
+   for u in range(-W,W+1):
+    out[W:-W,W:-W]=np.maximum(out[W:-W,W:-W],
+                              src[v+W:src.shape[0]+v-W,
+                                  u+W:src.shape[1]+u-W])
+  return out
+\end{Verbatim}
 
-\subsection{課題3.2}
-\subsubsection{calcHomography で計算した H を使った画像合成}
-図\ref{fig:3.2_1.jpg}が H を使って生成した合成画像である．
-
-\begin{figure}[h]
- \centering
- \includegraphics[scale=.3]{3.2_1.jpg}
- \caption{H を使った画像合成}
- \label{fig:3.2_1.jpg}
-\end{figure}
-
-
-\subsubsection{合成画像の品質の改善}
-図\ref{fig:3-1.W-4.jpg}が特徴座標 w を変更して得られた合成画像である．
-
-\begin{figure}[h]
- \centering
- \includegraphics[scale=.3]{3-1.W-4.jpg}
- \caption{品質が改善された合成画像}
- \label{fig:3-1.W-4.jpg}
-\end{figure}
+この関数は，点[y,x] について周囲[W:-W,W:-W]における最大値に値を置き換えるという作業を (u,v) をずらしながら行う．図\ref{fig:5.2_TKfilter.png},\ref{fig:5.2_LocalMax.png}はそれぞれ TKfilter によって絞られた特徴点の候補，LocalMax によってある特徴点候補における周辺$15 \times 15$における最大値である．
 
 \begin{figure}[h]
  \centering
  \begin{subfigure}[b]{0.45\textwidth}
    \centering
-   \includegraphics[scale=0.2]{3-1.W-8.jpg}
-   \caption{特徴点8個の合成画像}
-   \label{fig:3-1.W-8.jpg}
+   \includegraphics[scale=0.2]{5.2_TKfilter.png}
+   \caption{TKfilter後の画像}
+   \label{fig:5.2_TKfilter.png}
  \end{subfigure}
  \hspace{5mm}
  \begin{subfigure}[b]{0.45\textwidth}
    \centering
-   \includegraphics[scale=0.2]{3-1.W-12.jpg}
-   \caption{特徴点12個の合成画像}
-   \label{fig:3-1.W-12.jpg}
+   \includegraphics[scale=0.2]{5.2_LocalMax.png}
+   \caption{LocalMax後の画像}
+   \label{fig:5.2_LocalMax.png}
  \end{subfigure}
- \caption{特徴点数による合成画像の比較}
+ \caption{LocalMax による画像の変化}
  \label{fig:comparison_W}
 \end{figure}
 
+blur 関数では周囲[W:-W,W:-W]の平均値を出していたので，処理は加算をするところを最大値を取得するように置き換えただけで実装できる．
 
 
-
-\subsubsection{5組以上の特徴点を使った合成画像}
-図\ref{fig:3-1.W-8.jpg}が特徴点の個数が8個の合成画像であり，図\ref{fig:3-1.W-12.jpg}が特徴点の個数が12個の合成画像である．
-以下に画像合成に使用した w を載せる．このwの内，上から4行が特徴点4個，8行が特徴点8個，12行が特徴点12個の場合である．
-
-\begin{Verbatim}[numbers=left, xleftmargin=10mm, numbersep=6pt,
-                    fontsize=\small, baselinestretch=0.8]
-  w=np.array([
-44,42,165,65,
-627,17,746,15,
-58,558,183,563,
-625,538,754,554,
-113,187,233,202,
-462,208,577,215,
-162,523,281,533,
-458,471,577,483,
-269,285,387,294,
-387,292,502,300,
-288,350,404,362,
-396,369,513,379,
-]).reshape(-1,4)
-\end{Verbatim}
-
-特徴点は，4個のとき(図\ref{fig:3-1.W-4.jpg})が最も離れた4つの角で，8個のとき(図\ref{fig:3-1.W-8.jpg})では真ん中と端の中間あたりで，
-12個のとき(図\ref{fig:3-1.W-12.jpg})では真ん中あたりに追加した．
-画像を比較すると，特徴点の個数が多いほど綺麗に合成されていることが分かる．
-
-\subsubsection{(u,v)の座標を自動修正する方法}
-\begin{Verbatim}[numbers=left, xleftmargin=10mm, numbersep=6pt,
-                    fontsize=\small, baselinestretch=0.8]
-def sumOfSquaredDifference(w, im0, im1):
-  for i in range(w.shape[0]):
-    W=7
-    x,y,u,v=w[i]
-
-    tpl=im0[y-W:y+W+1,
-            x-W:x+W+1]
-    tgt=im1[v-W:v+W+1,
-            u-W:u+W+1]
-    res=np.zeros((7,7))
-    for dv in range(-3,4):
-      for du in range(-3,4):
-        tgt=im1[v+dv-W:v+dv+W+1,
-                u+du-W:u+du+W+1]
-        res[dv+3,du+3]=((tpl-tgt)**2).sum()
-    pos = np.array(np.unravel_index(np.argmin(res), res.shape))
-    print(f"{i}[v,u] = {pos - [3,3]}")
-\end{Verbatim}
-上記のコードは，特徴点の周囲7x7ピクセルを比較して，最も差分が小さくなる(u,v)を探索するものである．
-特徴点の周囲Wピクセルを切り出し，その中で(u,v)を中心に-3から+3までずらしたときの差分を計算し，最も差分が小さくなる(u,v)を選択している．
-この方法により，手動で指定した特徴点の(u,v)座標を修正することができる．
-しかしこのコードでは差分を計算するのみで，実際にwの(u,v)を更新する部分は含まれていないため，一度実行したのちに手動で更新する必要がある．
-
-実行前のwは以下の通りである．
-\begin{Verbatim}[numbers=left, xleftmargin=10mm, numbersep=6pt,
-                    fontsize=\small, baselinestretch=0.8]
-  w=np.array([
-44,42,165,65,
-627,17,746,15,
-58,558,183,563,
-625,538,754,554,
-113,187,233,202,
-462,208,577,215,
-162,523,281,533,
-458,471,577,483,
-269,285,387,294,
-387,292,502,300,
-288,350,404,362,
-396,369,513,379,
-]).reshape(-1,4)
-\end{Verbatim}
-実行した出力は以下の通りである．
-\begin{Verbatim}[numbers=left, xleftmargin=10mm, numbersep=6pt,
-                    fontsize=\small, baselinestretch=0.8]
-0[v,u] = [3 3]
-1[v,u] = [-3 -2]
-2[v,u] = [1 0]
-3[v,u] = [2 1]
-4[v,u] = [ 1 -1]
-5[v,u] = [1 1]
-6[v,u] = [-1  0]
-7[v,u] = [1 0]
-8[v,u] = [ 3 -2]
-9[v,u] = [2 1]
-10[v,u] = [-1  0]
-11[v,u] = [1 0]
-\end{Verbatim}
-これを参考にして，wの(u,v)を修正すると以下のようになる
+\subsubsection{縦横2段階に分解して効率化}
+以下は縦と横の二段階にして効率化したものである．
 
 \begin{Verbatim}[numbers=left, xleftmargin=10mm, numbersep=6pt,
                     fontsize=\small, baselinestretch=0.8]
-  w=np.array([
-44,42,165,65,
-627,17,746,15,
-58,558,183,564,
-625,538,755,556,
-113,187,232,203,
-462,208,578,216,
-162,523,281,532,
-458,471,577,484,
-269,285,385,297,
-387,292,503,302,
-288,350,404,361,
-396,369,513,380,
-]).reshape(-1,4)
+def LocalMax(src,W=7):
+ out=np.zeros_like(src)
+ T=np.zeros_like(src)
+ for v in range(-W,W+1):
+  T[W:-W,W:-W]=np.maximum(T[W:-W,W:-W],
+                          src[v+W:v+src.shape[0]-W,
+                              W:src.shape[1]-W])
+ for u in range(-W,W+1):
+  out[W:-W,W:-W]=np.maximum(out[W:-W,W:-W],
+                            T[W:-W,u+W:u+src.shape[1]-W])
+ return out
 \end{Verbatim}
 
-図\ref{fig:3.2-before.jpg},\ref{fig:3.2-after.jpg}が修正前と後の合成画像である．
+次が，(1)デフォルト (2)効率化後 の実行速度である．
+
+\begin{Verbatim}[numbers=left, xleftmargin=10mm, numbersep=6pt,
+                    fontsize=\small, baselinestretch=0.8]
+(1) Max:0.207 sec
+(2) Max:0.036 sec
+\end{Verbatim}
+
+6倍程度高速に動いていることがわかる．これは blur においてもそうだったが，二重ループによって $15^2$ 回の処理が必要だったものを，ループを2段階に分けることによって $15 \times 2$ 回の処理で済んでいるからである．
+
+
+\subsubsection{FASTとNAIVEの速度・結果を比較}
+極大判定における，FAST な実装と NAIVE な実装について比較する．
+
+\begin{Verbatim}[numbers=left, xleftmargin=10mm, numbersep=6pt,
+                    fontsize=\small, baselinestretch=0.8]
+(1) ary:0.002 sec
+(2) ary:0.160 sec
+\end{Verbatim}
+(1) が FAST な実装で，(2) が NAIVE な実装である．ここまでの速度の差が出てきてしまっているのは， FAST においては行列式の計算を行っているのに対し， NAIVE においては二重ループの計算 ($1024 \times 768$) を行っているからである．
+
+FAST で行っていることは，0の要素を省いて計算することである．厳密には，数値が0でない値(0以上)に対してその座標と値を行列として集めている．これによって高速な処理を可能にしている．以下において，np.where などの使い方を載せる．
+
+\begin{Verbatim}[numbers=left, xleftmargin=10mm, numbersep=6pt,
+                    fontsize=\small, baselinestretch=0.8]
+  X=np.array([0,2,0,0,3])
+  idx = np.where(X)[0]
+  vals = X[idx]
+  Mat = np.array([idx, vals])
+  print(Mat)
+  Mat=Mat.T
+  print(Mat)
+
+---------- 実行結果 ----------
+
+[[1 4]
+ [2 3]]
+[[1 2]
+ [4 3]]
+\end{Verbatim}
+
+
+
+\subsubsection{全体のコード}
+\begin{Verbatim}[numbers=left, xleftmargin=10mm, numbersep=6pt,
+                    fontsize=\small, baselinestretch=0.8]
+# [5.1 features]
+
+def LocalMax(src,W=7):
+ out=np.zeros_like(src)
+ T=np.zeros_like(src)
+ for v in range(-W,W+1):
+  T[W:-W,W:-W]=np.maximum(T[W:-W,W:-W],
+                          src[v+W:v+src.shape[0]-W,
+                              W:src.shape[1]-W])
+ for u in range(-W,W+1):
+  out[W:-W,W:-W]=np.maximum(out[W:-W,W:-W],
+                            T[W:-W,u+W:u+src.shape[1]-W])
+ return out
+
+
+def detectFeaturePoints(src,MAX=100):
+  W=7
+
+  tkf=TKfilter(src)
+  eb.                stopWatch('TKfilter')
+  out=LocalMax(tkf)
+  out[    :W+1]=0    # 周辺 8 pixel は除去
+  out[-W-1:   ]=0    # ※1
+  out[:,    :W+1]=0
+  out[:,-W-1:   ]=0
+  eb.                stopWatch('Max')
+
+# (6) 極大判定
+## FAST:
+  mask=(out==tkf)&(out>0) # (最大値 == 中心) かつ (最大値 > 0)
+  y,x=np.where(mask)      # mask[y,x]!=0 であるような x,y のリスト
+  ary=np.vstack((x,y,out[y,x])).T # [x,y,out[y,x]] を行とする行列
+
+## NAIVE:
+#  hgt,wdt=tkf.shape
+#  ary=[]
+#  for y in range(W+1,hgt-W-1):
+#   for x in range(W+1,wdt-W-1):
+#    if out[y,x]==tkf[y,x] and out[y,x]>0:
+#     ary+=[[x,y,out[y,x]]]
+#  ary=np.array(ary)
+
+  eb.                stopWatch('ary')
+
+  # (7) ary を第3列の降順に MAX 個残す
+  quicksort_des(ary,0,len(ary)-1)
+  ary=ary[:MAX]
+  eb.                stopWatch('sort')
+
+  # (8) 画像で結果表示
+  hgt,wdt=tkf.shape
+  img=np.zeros((hgt,wdt,3),'f') # 出力画像
+  img[:,:,0]=tkf*9 # 濃淡画像からカラー画像に変換
+  img[:,:,1]=tkf*9 # Numpy tips: Broadcast を参照
+  img[:,:,2]=tkf*9
+
+  for x,y,v in ary:
+   x=int(x)
+   y=int(y)
+   img[y-W:y+W+1,x-W:x+W+1]=(img[y-W:y+W+1,x-W:x+W+1]+[1,0,0])/2
+
+  eb.imshow(img)
+
+  return ary
+
+
+def main():
+  src=eb.getImg('0.jpg') # 入力画像
+  eb.                      stopWatch('start')
+  ary=detectFeaturePoints(src)
+  #print(ary)             # ary を表示
+  eb.showTime()
+
+
+
+def quicksort_des(ary,low,high):
+  if low>=high:
+    return
+  pivot=ary[(low+high)//2,2]
+  i,j=low,high
+  while i<=j:
+    while ary[i,2]>pivot:
+      i+=1
+    while ary[j,2]<pivot:
+      j-=1
+    if i<=j:
+      ary[i,:],ary[j,:]=ary[j,:].copy(),ary[i,:].copy()
+      i+=1
+      j-=1
+  quicksort_des(ary,low,j)
+  quicksort_des(ary,i,high)
+\end{Verbatim}
+
+\subsubsection{実行速度}
+\begin{Verbatim}[numbers=left, xleftmargin=10mm, numbersep=6pt,
+                    fontsize=\small, baselinestretch=0.8]
+start:0.005 sec
+TKfilter:0.036 sec
+Max:0.037 sec
+ary:0.002 sec
+sort:0.005 sec
+\end{Verbatim}
+
+
+\subsubsection{特徴点が絞られた画像}
+\begin{figure}[h]
+ \centering
+ \includegraphics[scale=.5]{5.2_features.jpg}
+ \caption{特徴点(周囲15*15)が赤}
+ \label{fig:5.2_features.jpg}
+\end{figure}
+
+
+\subsection{自分で撮影した画像}
 \begin{figure}[h]
  \centering
  \begin{subfigure}[b]{0.45\textwidth}
    \centering
-   \includegraphics[scale=0.2]{3.2-before.jpg}
-   \caption{自動修正前}
-   \label{fig:3.2-before.jpg}
+   \includegraphics[scale=0.2]{IMG_5566.jpg}
+   \caption{撮影した画像}
+   \label{fig:5.2_TKfilter.png}
  \end{subfigure}
  \hspace{5mm}
  \begin{subfigure}[b]{0.45\textwidth}
    \centering
-   \includegraphics[scale=0.2]{3.2-after.jpg}
-   \caption{自動修正後}
-   \label{fig:3.2-after.jpg}
+   \includegraphics[scale=0.2]{5.3_myfeatures.jpg}
+   \caption{特徴点}
+   \label{fig:5.2_LocalMax.png}
  \end{subfigure}
- \caption{自動修正前後の比較}
- \label{fig:comparison}
+ \caption{撮影した画像への実行}
+ \label{fig:comparison_W}
 \end{figure}
-
-
-これらの画像を比較すると，特に理科大の建物の文字の部分で修正前よりも綺麗に合成されていることが伺える．
-
-
-\subsubsection{撮影した画像の合成}
-使用する画像は図\ref{fig:IMG_5564.jpg},\ref{fig:IMG_5565.jpg}である．
-\begin{figure}[h]
-  \centering
-  \begin{subfigure}[b]{0.3\textwidth}
-    \centering
-    \includegraphics[width=\textwidth]{IMG_5564.jpg}
-    \caption{撮影画像1}
-    \label{fig:IMG_5564.jpg}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}[b]{0.3\textwidth}
-    \centering
-    \includegraphics[width=\textwidth]{IMG_5565.jpg}
-    \caption{撮影画像2}
-    \label{fig:IMG_5565.jpg}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}[b]{0.3\textwidth}
-    \centering
-    \includegraphics[width=\textwidth]{IMG_5566.jpg}
-    \caption{撮影画像3}
-    \label{fig:IMG_5566.jpg}
-  \end{subfigure}
-  \caption{3枚の撮影画像の比較}
-  \label{fig:photo_comparison}
-\end{figure}
-
-使用する特徴点 w は以下の通りである((u, v)の自動修正済み)．
-\begin{Verbatim}[numbers=left, xleftmargin=10mm, numbersep=6pt,
-                    fontsize=\small, baselinestretch=0.8]
-  w=np.array([
-909,362,598,366,
-854,738,556,743,
-500,519,178,549,
-377,303,19,303,
-]).reshape(-1,4)
-\end{Verbatim}
-
-そして，得られた合成画像が図\ref{fig:3.2-mypicture.jpg}である．
-\begin{figure}[h]
- \centering
- \begin{subfigure}[b]{0.45\textwidth}
-   \centering
-   \includegraphics[scale=0.2]{3.2-mypicture.jpg}
-   \caption{撮影画像の合成結果}
-   \label{fig:3.2-mypicture.jpg}
- \end{subfigure}
- \hspace{5mm}
- \begin{subfigure}[b]{0.45\textwidth}
-   \centering
-   \includegraphics[scale=0.2]{3.2-mypicture_w-12.jpg}
-   \caption{撮影画像の合成結果（特徴点12個）}
-   \label{fig:3.2-mypicture_w-12.jpg}
- \end{subfigure}
- \caption{特徴点数による撮影画像の合成結果比較}
- \label{fig:comparison_mypicture}
-\end{figure}
-
-
-特徴点の個数を12個に増やした合成画像が図\ref{fig:3.2-mypicture_w-12.jpg}である．
-
-
-\subsubsection{重なりの少ない画像の合成}
-図\ref{fig:IMG_5564.jpg},\ref{fig:IMG_5565.jpg},\ref{fig:IMG_5566.jpg}の3枚の画像を使用し，
-図\ref{fig:IMG_5564.jpg}と図\ref{fig:IMG_5566.jpg}を合成した．
-
-
-使用した特徴点 w は以下の通りである．ただし，w1が図\ref{fig:IMG_5564.jpg}と図\ref{fig:IMG_5565.jpg}の特徴点，
-w2が図\ref{fig:IMG_5565.jpg}と図\ref{fig:IMG_5566.jpg}の特徴点である．
-\begin{Verbatim}[numbers=left, xleftmargin=10mm, numbersep=6pt,
-                    fontsize=\small, baselinestretch=0.8]
-  w1=np.array([
-598,366,909,362,
-556,743,854,738,
-178,549,500,519,
-19,303,377,303,
-618,424,929,422,
-366,364,668,358,
-596,409,905,406,
-553,503,856,500,
-154,330,484,326,
-253,370,565,362,
-97,361,438,352,
-97,323,438,319,
-]).reshape(-1,4)
-
-  w2=np.array([
-83,699,455,668,
-83,608,458,585,
-85,513,463,499,
-19,368,415,368,
-569,360,953,372,
-541,290,923,295,
-376,299,734,306,
-166,368,535,371,
-580,563,960,601,
-598,638,979,687,
-589,239,983,237,
-273,234,635,243,
-]).reshape(-1,4)
-\end{Verbatim}
-
-得られた合成画像が図\ref{fig:3.2-mypicture-m2d.jpg}である．
-
-また，3枚間の画像の合成結果は図\ref{fig:3.2-mypicture-m1dm2d.jpg}のようである．
-
-\begin{figure}[h]
- \centering
- \begin{subfigure}[b]{0.45\textwidth}
-   \centering
-   \includegraphics[scale=0.2]{3.2-mypicture-m2d.jpg}
-   \caption{重なりの少ない画像の合成結果}
-   \label{fig:3.2-mypicture-m2d.jpg}
- \end{subfigure}
- \hspace{5mm}
- \begin{subfigure}[b]{0.45\textwidth}
-   \centering
-   \includegraphics[scale=0.2]{3.2-mypicture-m1dm2d.jpg}
-   \caption{3枚間の画像の合成結果}
-   \label{fig:3.2-mypicture-m1dm2d.jpg}
- \end{subfigure}
- \caption{異なる重なり条件における画像合成結果の比較}
- \label{fig:comparison_m1dm2d}
-\end{figure}
-
-
-
-
-
 
 %--------------------------------------------------------------------%
 \section{感想}
